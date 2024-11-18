@@ -17,12 +17,15 @@ def argumentParser():
 
     source_path = Path(args['source'])
 
+    #Error if source folder doesnt exist
     if source_path.is_dir():
         replica_path = Path(args['replica'])
+        #Creates replica folder if it doesnt exist
         if not replica_path.is_dir():
             replica_path.mkdir()
             print(f'Replica folder created: {replica_path}')
 
+        #Creates log file if it doesnt exist
         log_path = Path(args['log'])
         if not log_path.is_file():
             log_path.touch()
@@ -33,10 +36,12 @@ def argumentParser():
         sys.exit(1)
 
 def synchronizeFolders(source, replica, log_path):
-    #Check and copy files from source to replica
+    #Create/copy operations from source folder to replica
     for file in source.glob("*"):
         replica_path = replica / file.name
+        #If file in replica folder exists, it compares both files to see if the content match. Else creates the file in replica folder
         if replica_path.exists():
+            #If they are not the same copies file to replica folder
             if not cmp(source / file.name, replica / file.name):
                 shutil.copy(source / file.name, replica / file.name)        
                 log = f'Copied file {file.name} to replica'
@@ -46,9 +51,10 @@ def synchronizeFolders(source, replica, log_path):
             log = f'Created file {file.name} in replica'
             writeLogFile(log_path, log)
 
-    #Check files from replica to source and delete those that dont exist
+    #Remove operation from replica folder
     for file in replica.glob('*'):
         source_path = source / file.name
+        #If file doesnt exist in source folder, deletes the file in replica folder
         if not source_path.exists():
             replica_path = replica / file.name
             replica_path.unlink()
@@ -64,12 +70,16 @@ def writeLogFile(log_path, log):
     
 
 def main():
+    #Receives arguments
     source, replica, interval, log = argumentParser()
 
     try:
-        print('Folder synchronization started')
-        synchronizeFolders(source, replica, log)
-        print('Folder synchronization ended\n')
+        while True:
+            print('Folder synchronization started')
+            synchronizeFolders(source, replica, log)
+            print('Folder synchronization ended\n')
+
+            time.sleep(interval)
 
     except KeyboardInterrupt:
         print('Folder synchronization interrupted')
